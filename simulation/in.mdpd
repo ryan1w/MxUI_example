@@ -1,0 +1,101 @@
+############### set variables for convenience
+
+### model parameters
+
+variable	kBT		equal 1.0
+variable	seed		equal 2654868
+variable	cut_att		equal 1.00
+variable	cut_rep		equal 0.75
+variable	cut_rho		equal 0.75
+variable	cut_phi		equal 1.00
+variable	skin		equal 0.3*${cut_att}
+
+variable	rho_solids	equal 8.0
+
+variable	A_att_11	equal -40 # solid--solid
+variable	A_att_12	equal -40 # solid--fluid
+variable	A_att_22	equal -20 # fluid--fluid
+
+variable    B_rep       equal 25
+variable    gamma       equal 18.0
+
+variable    type_fluid	equal 1
+variable    type_solid	equal 2
+
+variable    phi_c       equal 0.5
+
+variable    mass_fluid	equal 1
+variable    mass_solid	equal 1
+
+### domain parameters
+
+variable    xlo     equal  0
+variable    xhi     equal  10
+variable    ylo     equal  0
+variable    yhi     equal  10
+variable    zlo     equal  0
+variable    zhi     equal  35
+
+variable    prhi    equal 32.0
+variable    prlo    equal 29.0
+variable    frhi    equal 35.0
+variable    frlo    equal 34.0
+variable    adhi    equal 5.0
+variable    adlo    equal 0.0
+variable    cutr    equal 1.0
+
+variable den  equal 7
+variable npar equal round((${xhi}-${xlo})*(${yhi}-${ylo})*(${zhi}-${zlo})*${den})
+
+### runtime parameters
+
+variable    step        equal 0.01
+
+############### set units, dimension and global boundary type
+
+units		lj
+dimension	3
+boundary	p p f
+neighbor	${skin} bin
+neigh_modify	every 1 delay 0 check yes
+atom_style	mdpd/atomic/meso 8
+
+region          box block ${xlo} ${xhi} ${ylo} ${yhi} ${zlo} ${zhi} units box
+create_box      2 box
+create_atoms    1 random ${npar} 574856 box
+
+mass * 1.0
+
+region pregion  block INF INF INF INF ${prlo} ${prhi}
+region fregion  block INF INF INF INF ${frlo} ${frhi}
+region wall     block INF INF INF INF ${adlo} ${adhi}
+
+group		group_solid region  wall
+group		group_fluid subtract all group_solid
+
+compute mobile group_fluid temp
+velocity group_fluid create 1.0 87287
+
+############### specify bead-to-bead pair style and coefficients
+
+pair_style	mdpd/meso ${kBT} ${cut_att} ${seed} group_fluid group_solid
+pair_coeff	1 1 ${A_att_11} ${B_rep} ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	1 2 ${A_att_12} ${B_rep} ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	2 2 ${A_att_22} ${B_rep} ${gamma} ${cut_att} ${cut_rep}
+
+############### specify unit mass
+
+# mass		${type_fluid} ${mass_fluid}
+# mass		${type_solid} ${mass_solid}
+
+############### 
+
+fix		BC all aboundary/rho/meso wall group_solid mobile group_fluid rho_wall ${rho_solids} cut_phi ${cut_phi} phi_c ${phi_c} cut_rho ${cut_rho}
+fix     muigpu all mui/meso/gpu mpi://domain2/interface ${prhi} ${prlo} ${frhi} ${frlo} ${cutr}
+
+run_style       mvv/meso
+
+timestep	${step}
+thermo		100
+
+run		1000

@@ -1,0 +1,69 @@
+LAMMPS (1 Sep 2017)
+echo screen
+Created orthogonal box = (0 0 30) to (10 10 51)
+  1 by 1 by 1 MPI processor grid
+Created 2100 atoms
+0 atoms in group todel
+Deleted 0 atoms, new total = 2100
+112 atoms in group wall
+1988 atoms in group flow
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 3.4
+  ghost atom cutoff = 3.4
+  binsize = 1.7, bins = 6 6 13
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair dpd, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d/newton
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 4.22 | 4.22 | 4.22 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0   0.94664126    9.9432632            0    11.362549    11.682618 
+     100    0.9426361     5.244737            0    6.6580179    9.0665407 
+     200   0.95017138    5.2078513            0    6.6324297    9.6569625 
+     300   0.92083135    5.2270427            0     6.607632    9.2147453 
+     400   0.93501782    5.2027525            0    6.6046114    10.043235 
+     500   0.87698565    5.2081331            0    6.5229852    9.6779694 
+     600   0.93676792    5.2013274            0    6.6058101    10.090017 
+     700   0.94181815    5.2425121            0    6.6545666    9.2994412 
+     800    0.93    1000   0.85343983    70.405132            0     71.68524     5.973835 
+Loop time of 3.11877 on 16 procs (1 MPI x 16 OpenMP) for 1000 steps with 24500 atoms
+
+Pair  time (%) = 0.0107793 (0.345628)
+Neigh time (%) = 0.000381985 (0.0122479)
+Comm  time (%) = 0.2879 (9.23121)
+Outpt time (%) = 0.00212331 (0.0680816)
+Other time (%) = 2.81758 (90.3428)
+
+Nlocal:    24500 ave 24500 max 24500 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    14365 ave 14365 max 14365 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 0
+Ave neighs/atom = 0
+Neighbor list builds = 2
+Dangerous builds = 0
+ 0.0 |  3.69
+Comm    | 0.048414   | 0.048414   | 0.048414   |   0.0 |  1.54
+Output  | 0.00042734 | 0.00042734 | 0.00042734 |   0.0 |  0.01
+Modify  | 0.90304    | 0.90304    | 0.90304    |   0.0 | 28.78
+Other   |            | 0.01642    |            |       |  0.52
+
+Nlocal:    2100 ave 2100 max 2100 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    3855 ave 3855 max 3855 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    158854 ave 158854 max 158854 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 158854
+Ave neighs/atom = 75.6448
+Neighbor list builds = 24
+Dangerous builds = 0
+Total wall time: 0:00:03

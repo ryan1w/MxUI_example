@@ -1,0 +1,395 @@
+[1714620458.837544] [node0246:552156:0]          parser.c:1906 UCX  WARN  unused env variable: UCX_ROOT (set UCX_WARN_UNUSED_ENV_VARS=n to suppress this warning)
+[1714620458.838541] [node0246:552157:0]          parser.c:1906 UCX  WARN  unused env variable: UCX_ROOT (set UCX_WARN_UNUSED_ENV_VARS=n to suppress this warning)
+LAMMPS (30 Sep 2013)
+LAMMPS (1 Sep 2017)
+
+#mui DPD solver
+
+variable lratio     equal   1.0
+variable vratio     equal   1.0
+variable tratio     equal   1.0
+variable fratio     equal   1.0
+
+variable  xlo       equal  0.0
+variable  xhi       equal  10.0
+variable  ylo       equal  0.0
+variable  yhi       equal  10.0
+variable  zlo       equal  30.0
+variable  zhi       equal  51.0
+
+variable prhi       equal 36.0
+variable prlo       equal 33.0
+variable frhi       equal 31.0
+variable frlo       equal 30.0
+variable adhi       equal 51.0
+variable adlo       equal 50.0
+variable step       equal 0.01
+variable cutr       equal 1.0
+variable wflag      equal 2
+
+# variable force      equal 0.001
+# variable inter      equal 20
+variable scale      equal 10
+variable t_tol      equal 0
+
+variable den  equal 1
+variable npar equal round((${xhi}-${xlo})*(${yhi}-${ylo})*(${zhi}-${zlo})*${den})
+variable npar equal round((10-${xlo})*(${yhi}-${ylo})*(${zhi}-${zlo})*${den})
+variable npar equal round((10-0)*(${yhi}-${ylo})*(${zhi}-${zlo})*${den})
+variable npar equal round((10-0)*(10-${ylo})*(${zhi}-${zlo})*${den})
+variable npar equal round((10-0)*(10-0)*(${zhi}-${zlo})*${den})
+variable npar equal round((10-0)*(10-0)*(51-${zlo})*${den})
+variable npar equal round((10-0)*(10-0)*(51-30)*${den})
+variable npar equal round((10-0)*(10-0)*(51-30)*1)
+
+#*************settings**************
+dimension 3
+units lj
+boundary p p f
+
+atom_style atomic
+#read_restart dpd2.80000.restart
+#reset_timestep 0
+
+region    dpd  block ${xlo} ${xhi} ${ylo} ${yhi} ${zlo} ${zhi} units box
+region    dpd  block 0 ${xhi} ${ylo} ${yhi} ${zlo} ${zhi} units box
+region    dpd  block 0 10 ${ylo} ${yhi} ${zlo} ${zhi} units box
+region    dpd  block 0 10 0 ${yhi} ${zlo} ${zhi} units box
+region    dpd  block 0 10 0 10 ${zlo} ${zhi} units box
+region    dpd  block 0 10 0 10 30 ${zhi} units box
+region    dpd  block 0 10 0 10 30 51 units box
+create_box  2 dpd
+Created orthogonal box = (0 0 30) to (10 10 51)
+  1 by 1 by 1 MPI processor grid
+create_atoms   1 random ${npar} 32413 dpd
+create_atoms   1 random 2100 32413 dpd
+Created 2100 atoms
+neighbor 2.0 bin
+neigh_modify delay 0 every 1 check yes
+
+comm_modify vel yes
+mass * 1.0
+
+region todel block INF INF INF INF INF ${zlo}
+region todel block INF INF INF INF INF 30
+group todel region todel
+0 atoms in group todel
+delete_atoms group todel
+Deleted 0 atoms, new total = 2100
+
+region pregion block INF INF INF INF ${prlo} ${prhi}
+region pregion block INF INF INF INF 33 ${prhi}
+region pregion block INF INF INF INF 33 36
+region fregion block INF INF INF INF ${frlo} ${frhi}
+region fregion block INF INF INF INF 30 ${frhi}
+region fregion block INF INF INF INF 30 31
+region wall block INF INF INF INF ${adlo} ${adhi}
+region wall block INF INF INF INF 50 ${adhi}
+region wall block INF INF INF INF 50 51
+
+group wall region wall
+112 atoms in group wall
+group flow subtract all wall
+1988 atoms in group flow
+
+compute mobile flow temp
+velocity flow create 1.0 45216
+newton on
+
+pair_style dpd 1.0 1.0 64739 ${wflag} ${adlo}
+pair_style dpd 1.0 1.0 64739 2 ${adlo}
+pair_style dpd 1.0 1.0 64739 2 50
+pair_coeff * * 25.0 12 1.4
+
+fix 1 all nve
+
+velocity wall set 0.0 0.0 0.0 units box
+
+variable        gx    equal  0.00000025*180
+variable        fx atom mass*${gx}
+variable        fx atom mass*4.5e-05
+fix    pressure flow addforce v_fx 0.0 0.0
+
+fix 2 all wall/reflect zlo EDGE zhi EDGE units box
+fix 3 flow wall/reflect zlo ${zlo} zhi ${adlo} units box
+fix 3 flow wall/reflect zlo 30 zhi ${adlo} units box
+fix 3 flow wall/reflect zlo 30 zhi 50 units box
+fix 4 wall wall/reflect zlo ${adlo} zhi EDGE units box
+fix 4 wall wall/reflect zlo 50 zhi EDGE units box
+fix 5 wall setforce 0.0 0.0 0.0
+# fix muicpu all mui/meso mpi://domain1/interface pregion fregion ${cutr}
+fix muicpu all meso/mui mpi://domain1/interface pregion fregion ${cutr} ${scale} ${lratio} ${vratio} ${tratio} ${t_tol}
+fix muicpu all meso/mui mpi://domain1/interface pregion fregion 1 ${scale} ${lratio} ${vratio} ${tratio} ${t_tol}
+fix muicpu all meso/mui mpi://domain1/interface pregion fregion 1 10 ${lratio} ${vratio} ${tratio} ${t_tol}
+fix muicpu all meso/mui mpi://domain1/interface pregion fregion 1 10 1 ${vratio} ${tratio} ${t_tol}
+fix muicpu all meso/mui mpi://domain1/interface pregion fregion 1 10 1 1 ${tratio} ${t_tol}
+fix muicpu all meso/mui mpi://domain1/interface pregion fregion 1 10 1 1 1 ${t_tol}
+fix muicpu all meso/mui mpi://domain1/interface pregion fregion 1 10 1 1 1 0
+  using 16 OpenMP thread(s) per MPI task
+
+############### set variables for convenience
+
+### model parameters
+
+variable	kBT		equal 1.0
+variable	seed		equal 2654868
+variable	cut_att		equal 1.00
+variable	cut_rep		equal 0.75
+variable	cut_rho		equal 0.75
+variable	cut_phi		equal 1.00
+variable	skin		equal 0.3*${cut_att}
+variable	skin		equal 0.3*1
+
+variable	rho_solids	equal 8.0
+
+variable	A_att_11	equal -40 # solid--solid
+variable	A_att_12	equal -40 # solid--fluid
+variable	A_att_22	equal -20 # fluid--fluid
+
+variable    B_rep       equal 25
+variable    gamma       equal 18.0
+
+variable    type_fluid	equal 1
+variable    type_solid	equal 2
+
+variable    phi_c       equal 0.5
+
+variable    mass_fluid	equal 1
+variable    mass_solid	equal 1
+
+### domain parameters
+
+variable    xlo     equal  0
+variable    xhi     equal  10
+variable    ylo     equal  0
+variable    yhi     equal  10
+variable    zlo     equal  0
+variable    zhi     equal  35
+
+variable    prhi    equal 32.0
+variable    prlo    equal 29.0
+variable    frhi    equal 35.0
+variable    frlo    equal 34.0
+variable    adhi    equal 5.0
+variable    adlo    equal 0.0
+variable    cutr    equal 1.0
+
+variable den  equal 7
+variable npar equal round((${xhi}-${xlo})*(${yhi}-${ylo})*(${zhi}-${zlo})*${den})
+variable npar equal round((10-${xlo})*(${yhi}-${ylo})*(${zhi}-${zlo})*${den})
+variable npar equal round((10-0)*(${yhi}-${ylo})*(${zhi}-${zlo})*${den})
+variable npar equal round((10-0)*(10-${ylo})*(${zhi}-${zlo})*${den})
+variable npar equal round((10-0)*(10-0)*(${zhi}-${zlo})*${den})
+variable npar equal round((10-0)*(10-0)*(35-${zlo})*${den})
+variable npar equal round((10-0)*(10-0)*(35-0)*${den})
+variable npar equal round((10-0)*(10-0)*(35-0)*7)
+
+### runtime parameters
+
+variable    step        equal 0.01
+
+############### set units, dimension and global boundary type
+
+units		lj
+dimension	3
+boundary	p p f
+neighbor	${skin} bin
+neighbor	0.2999999999999999889 bin
+neigh_modify	every 1 delay 0 check yes
+atom_style	mdpd/atomic/meso 8
+
+region          box block ${xlo} ${xhi} ${ylo} ${yhi} ${zlo} ${zhi} units box
+region          box block 0 ${xhi} ${ylo} ${yhi} ${zlo} ${zhi} units box
+region          box block 0 10 ${ylo} ${yhi} ${zlo} ${zhi} units box
+region          box block 0 10 0 ${yhi} ${zlo} ${zhi} units box
+region          box block 0 10 0 10 ${zlo} ${zhi} units box
+region          box block 0 10 0 10 0 ${zhi} units box
+region          box block 0 10 0 10 0 35 units box
+create_box      2 box
+Created orthogonal box = (0 0 0) to (10 10 35)
+  1 by 1 by 1 MPI processor grid
+create_atoms    1 random ${npar} 574856 box
+create_atoms    1 random 24500 574856 box
+Created 24500 atoms
+
+mass * 1.0
+
+region pregion  block INF INF INF INF ${prlo} ${prhi}
+region pregion  block INF INF INF INF 29 ${prhi}
+region pregion  block INF INF INF INF 29 32
+region fregion  block INF INF INF INF ${frlo} ${frhi}
+region fregion  block INF INF INF INF 34 ${frhi}
+region fregion  block INF INF INF INF 34 35
+region wall     block INF INF INF INF ${adlo} ${adhi}
+region wall     block INF INF INF INF 0 ${adhi}
+region wall     block INF INF INF INF 0 5
+
+group		group_solid region  wall
+3551 atoms in group group_solid
+group		group_fluid subtract all group_solid
+20949 atoms in group group_fluid
+
+compute mobile group_fluid temp
+velocity group_fluid create 1.0 87287
+
+############### specify bead-to-bead pair style and coefficients
+
+pair_style	mdpd/meso ${kBT} ${cut_att} ${seed} group_fluid group_solid
+pair_style	mdpd/meso 1 ${cut_att} ${seed} group_fluid group_solid
+pair_style	mdpd/meso 1 1 ${seed} group_fluid group_solid
+pair_style	mdpd/meso 1 1 2654868 group_fluid group_solid
+pair_coeff	1 1 ${A_att_11} ${B_rep} ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	1 1 -40 ${B_rep} ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	1 1 -40 25 ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	1 1 -40 25 18 ${cut_att} ${cut_rep}
+pair_coeff	1 1 -40 25 18 1 ${cut_rep}
+pair_coeff	1 1 -40 25 18 1 0.75
+pair_coeff	1 2 ${A_att_12} ${B_rep} ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	1 2 -40 ${B_rep} ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	1 2 -40 25 ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	1 2 -40 25 18 ${cut_att} ${cut_rep}
+pair_coeff	1 2 -40 25 18 1 ${cut_rep}
+pair_coeff	1 2 -40 25 18 1 0.75
+pair_coeff	2 2 ${A_att_22} ${B_rep} ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	2 2 -20 ${B_rep} ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	2 2 -20 25 ${gamma} ${cut_att} ${cut_rep}
+pair_coeff	2 2 -20 25 18 ${cut_att} ${cut_rep}
+pair_coeff	2 2 -20 25 18 1 ${cut_rep}
+pair_coeff	2 2 -20 25 18 1 0.75
+
+############### specify unit mass
+
+# mass		${type_fluid} ${mass_fluid}
+# mass		${type_solid} ${mass_solid}
+
+###############
+
+fix		BC all aboundary/rho/meso wall group_solid mobile group_fluid rho_wall ${rho_solids} cut_phi ${cut_phi} phi_c ${phi_c} cut_rho ${cut_rho}
+fix		BC all aboundary/rho/meso wall group_solid mobile group_fluid rho_wall 8 cut_phi ${cut_phi} phi_c ${phi_c} cut_rho ${cut_rho}
+fix		BC all aboundary/rho/meso wall group_solid mobile group_fluid rho_wall 8 cut_phi 1 phi_c ${phi_c} cut_rho ${cut_rho}
+fix		BC all aboundary/rho/meso wall group_solid mobile group_fluid rho_wall 8 cut_phi 1 phi_c 0.5 cut_rho ${cut_rho}
+fix		BC all aboundary/rho/meso wall group_solid mobile group_fluid rho_wall 8 cut_phi 1 phi_c 0.5 cut_rho 0.75
+fix     muigpu all mui/meso/gpu mpi://domain2/interface ${prhi} ${prlo} ${frhi} ${frlo} ${cutr}
+fix     muigpu all mui/meso/gpu mpi://domain2/interface 32 ${prlo} ${frhi} ${frlo} ${cutr}
+fix     muigpu all mui/meso/gpu mpi://domain2/interface 32 29 ${frhi} ${frlo} ${cutr}
+fix     muigpu all mui/meso/gpu mpi://domain2/interface 32 29 35 ${frlo} ${cutr}
+fix     muigpu all mui/meso/gpu mpi://domain2/interface 32 29 35 34 ${cutr}
+fix     muigpu all mui/meso/gpu mpi://domain2/interface 32 29 35 34 1
+MUI [comm_mpi.h]: Rank: 0, Identifier: mpi://domain2/interface, Domain size: 1, Peers: 1
+MUI [comm_mpi.h]: Rank: 1, Identifier: mpi://domain1/interface, Domain size: 1, Peers: 1, global size2
+
+run_style       mvv/meso
+
+timestep	${step}
+timestep	0.010000000000000000208
+thermo		100
+
+run		1000
+WARNING: <MESO> newton_pair not allowed in MESO mode, forced to 0; ghost_velocity forced to 1 (../mvv_meso.cu:104)
+WARNING: <MESO> implicit virial computation not allowed in MESO mode, forced to explicit (../mvv_meso.cu:114)
+WARNING: <MESO> atom sort frequency managed automatically in USER-MESO (../mvv_meso.cu:125)
+
+#*********************dump***************************************************
+#compute cc1 all chunk/atom bin/1d z lower ${inter}
+#fix 7 all ave/chunk 10 10 1000 cc1 vx norm sample file v_dpd.out
+#compute        peratom all stress/atom NULL
+#fix     tau_xz all ave/chunk  10 10 1000 cc1 c_peratom[5] norm sample file stress_dpd.profile
+
+
+timestep ${step}
+timestep 0.01
+thermo 100
+#thermo_modify temp mobile
+#dump mydump all xyz 100 dpd1.xyz
+#restart 10000 dpd2.*.restart
+run 1000
+Setting up run ...
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 3.4
+  ghost atom cutoff = 3.4
+  binsize = 1.7, bins = 6 6 13
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair dpd, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d/newton
+      bin: standard
+Setting up Verlet run ...
+  Unit style    : lj
+  Current step  : 0
+  Time step     : 0.01
+Per MPI rank memory allocation (min/avg/max) = 4.22 | 4.22 | 4.22 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0   0.94664126    9.9432632            0    11.362549    11.682618 
+Memory usage per processor = 20.0066 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0   0.85505531    70.446269            0      71.7288    5.9851429 
+     100    0.9426361     5.244737            0    6.6580179    9.0665407 
+     100    0.8510713    70.405132            0    71.681687     5.957256 
+     200   0.95017138    5.2078513            0    6.6324297    9.6569625 
+     200   0.85300873    70.405132            0    71.684593    5.9708174 
+     300   0.92083135    5.2270427            0     6.607632    9.2147453 
+     300   0.85400001    70.405132            0     71.68608    5.9777561 
+     400   0.85266629    70.405132            0    71.684079    5.9684204 
+     400   0.93501782    5.2027525            0    6.6046114    10.043235 
+     500   0.87698565    5.2081331            0    6.5229852    9.6779694 
+     500    0.8535426    70.405132            0    71.685394    5.9745543 
+     600   0.93676792    5.2013274            0    6.6058101    10.090017 
+     600   0.85476669    70.405132            0     71.68723    5.9831226 
+     700   0.94181815    5.2425121            0    6.6545666    9.2994412 
+     700   0.85364892    70.405132            0    71.685553    5.9752986 
+     800    0.9390256    5.2229012            0    6.6307689    9.7475209 
+     800   0.85424071    70.405132            0    71.686441    5.9794409 
+     900   0.94475392    5.2718108            0    6.6882669     8.558765 
+     900   0.85357914    70.405132            0    71.685449    5.9748101 
+    1000   0.95955713    5.2550742            0    6.6937245    9.5825029 
+Loop time of 3.13778 on 1 procs for 1000 steps with 2100 atoms
+
+Performance: 275353.540 tau/day, 318.696 timesteps/s
+99.4% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2.0536     | 2.0536     | 2.0536     |   0.0 | 65.45
+Neigh   | 0.11591    | 0.11591    | 0.11591    |   0.0 |  3.69
+Comm    | 0.048414   | 0.048414   | 0.048414   |   0.0 |  1.54
+Output  | 0.00042734 | 0.00042734 | 0.00042734 |   0.0 |  0.01
+Modify  | 0.90304    | 0.90304    | 0.90304    |   0.0 | 28.78
+Other   |            | 0.01642    |            |       |  0.52
+
+Nlocal:    2100 ave 2100 max 2100 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    3855 ave 3855 max 3855 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    158854 ave 158854 max 158854 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 158854
+Ave neighs/atom = 75.6448
+Neighbor list builds = 24
+Dangerous builds = 0
+
+    1000   0.85343983    70.405132            0     71.68524     5.973835 
+Loop time of 3.11877 on 16 procs (1 MPI x 16 OpenMP) for 1000 steps with 24500 atoms
+
+Pair  time (%) = 0.0107793 (0.345628)
+Neigh time (%) = 0.000381985 (0.0122479)
+Comm  time (%) = 0.2879 (9.23121)
+Outpt time (%) = 0.00212331 (0.0680816)
+Other time (%) = 2.81758 (90.3428)
+
+Nlocal:    24500 ave 24500 max 24500 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    14365 ave 14365 max 14365 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 0
+Ave neighs/atom = 0
+Neighbor list builds = 2
+Dangerous builds = 0
+Total wall time: 0:00:03
