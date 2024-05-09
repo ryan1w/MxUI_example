@@ -40,7 +40,6 @@ else
 LINKFLAGS = -O3 -fopenmp
 endif
 endif
-LINKFLAGS += -g3 -O -L /home/wan6/software/modules/linux-rocky8-x86_64/lib/
 
 LIB       = -lpthread  -L/software/spackages/linux-rocky8-x86_64/gcc-9.5.0/cuda-11.1.1-gvdep34zxhk3vvzcg3dti7ytgmuf5547/lib64 -lcudart -lrt -lstdc++
 ifeq ($(PROFILE),1)
