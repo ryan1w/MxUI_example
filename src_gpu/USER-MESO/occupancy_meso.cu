@@ -21,6 +21,8 @@ MesoCUDAOccupancy::MesoCUDAOccupancy( LAMMPS *lmp ) : MesoPointers( lmp )
     gpu_specs_text.push_back( "6.0    sm_60    32    64    2048   32    65536    65536   256     warp    255    256    4    1024    98304    16384    32768    256" );
     gpu_specs_text.push_back( "6.1    sm_61    32    64    2048   32    65536    65536   256     warp    255    256    4    1024    98304    16384    32768    256" );
     gpu_specs_text.push_back( "7.0    sm_70    32    64    2048   32    65536    65536   256     warp    255    256    2    1024    98304    16384    32768    256" );
+    gpu_specs_text.push_back( "8.9    sm_89    32    64    2048   32    65536    65536   256     warp    255    256    2    1024    98304    16384    32768    256" );
+    gpu_specs_text.push_back( "9.0    sm_90    32    64    2048   32    65536    65536   256     warp    255    256    2    1024    98304    16384    32768    256" );
 }
 
 int MesoCUDAOccupancy::get_sm_count( int device_id )
