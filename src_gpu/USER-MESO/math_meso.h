@@ -513,11 +513,11 @@ template<int N> __inline__ __host__ __device__ float uniform_TEA_fast( uint v0, 
 //  return _SQRT_3 * ( (m >> 32) * 4.656612873077392578125e-10 - 1.0 );
 //}
 
-__inline__ __device__ double fetch_double( texture<int2, cudaTextureType1D> tex, int i )
-{
-    int2 v = tex1Dfetch( tex, i );
-    return __hiloint2double( v.y, v.x );
-}
+// __inline__ __device__ double fetch_double( texture<int2, cudaTextureType1D> tex, int i )
+// {
+//     int2 v = tex1Dfetch( tex, i );
+//     return __hiloint2double( v.y, v.x );
+// }
 
 template<>
 __inline__ __device__ double tex1Dfetch<double>( cudaTextureObject_t tex, int i )
